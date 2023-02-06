@@ -38,9 +38,9 @@ std::vector<ColorType> materials;
 
 int main(int argc, char *argv[])
 {
-    if(argc != 3)
+    if(argc != 2)
     {
-        std::cout << "Input a scene file as first argument and output file name as second";
+        std::cout << "Input a scene file as first argument.";
         return 0;
     }
 
@@ -159,7 +159,8 @@ int main(int argc, char *argv[])
     deltaH = vec3::scale(vec3::sub(ur, ul), 1.0/(imgWidth-1));
     deltaV = vec3::scale(vec3::sub(ll, ul), 1.0/(imgHeight-1));
 
-    std::string outfileName = std::string(argv[2]) + ".ppm";
+    std::string fileName = std::string(argv[1]);
+    std::string outfileName = std::string(fileName).substr(0, fileName.length()-4) + ".ppm";
     std::ofstream outfile (outfileName);
     outfile << "P3\n" << imgWidth << " " << imgHeight << "\n255\n";
 
