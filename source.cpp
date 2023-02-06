@@ -1,45 +1,11 @@
 #include "vec3.h"
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <math.h>
+#include <vector>
+#include "rayMath.h"
 
-struct ColorType
-{
-    int r = 0;
-    int b = 0;
-    int g = 0;
-
-    ColorType(int r, int b, int g)
-    {
-        this->r = r;
-        this->g = g;
-        this->b = b;
-    }
-};
-
-struct RayType
-{
-    vec3 pos;
-    vec3 dir;
-
-    RayType(vec3 pos, vec3 dir)
-    {
-        this->pos = pos;
-        this->dir = dir;
-    }
-};
-
-struct SphereType
-{
-    vec3 pos;
-    float radius;
-
-    SphereType(vec3 pos, float radius)
-    {
-        this->pos = pos;
-        this->radius = radius;
-    }
-};
 
 ColorType bgColor = ColorType(0,0,0);
 
@@ -47,89 +13,171 @@ vec3 camPos = vec3(0,0,0);
 vec3 camDir = vec3(0,0,1);
 vec3 camUp = vec3(0,1,0);
 
-vec3 u;
-vec3 v;
-vec3 w;
+vec3 u, v, w;
 
-float hFOV = 90;
+vec3 ul, ur, ll, lr;
+
+float hFOV = 120;
 float vFOV = 90;
+
+vec3 deltaH, deltaV;
 
 float viewDist = 1;
 
 float windowWidth;
 float windowHeight;
 
-int imgWidth = 10;
-int imgHeight = 10;
+int imgWidth = 100;
+int imgHeight = 100;
 
-int main()
+float aspectRatio;
+
+std::vector<SphereType> spheres;
+
+std::vector<ColorType> materials;
+
+int main(int argc, char *argv[])
 {
-    /* read scene description from input file */
-    /* initialize pixel array for output image */
-    /* perform any required preliminary calculations */
-    /* for each pixel in the image array: */
+    if(argc != 3)
+    {
+        std::cout << "Input a scene file as first argument and output file name as second";
+        return 0;
+    }
+
+    std::ifstream inputFile (argv[1]);
+
+    if(inputFile.is_open())
+    {
+        while(inputFile.good())
+        {
+            try
+            {
+                std::string string;
+                inputFile >> string;
+                std::cout << string << std::endl;
+                if(string == "eye")
+                {
+                    inputFile >> string;
+                    camPos.x = std::stof(string);
+                    inputFile >> string;
+                    camPos.y = std::stof(string);
+                    inputFile >> string;
+                    camPos.z = std::stof(string);
+                }
+                else if(string == "viewdir")
+                {
+                    inputFile >> string;
+                    camDir.x = std::stof(string);
+                    inputFile >> string;
+                    camDir.y = std::stof(string);
+                    inputFile >> string;
+                    camDir.z = std::stof(string);
+                }
+                else if(string == "updir")
+                {
+                    inputFile >> string;
+                    camUp.x = std::stof(string);
+                    inputFile >> string;
+                    camUp.y = std::stof(string);
+                    inputFile >> string;
+                    camUp.z = std::stof(string);
+                }
+                else if(string == "hfov")
+                {
+                    inputFile >> string;
+                    hFOV = std::stoi(string);
+                }
+                else if(string == "imsize")
+                {
+                    inputFile >> string;
+                    imgWidth = std::stoi(string);
+                    inputFile >> string;
+                    imgHeight = std::stoi(string);
+                }
+                else if(string == "bkgcolor")
+                {
+                    ColorType bgColor = ColorType(0,0,0);
+                    inputFile >> string;
+                    bgColor.r = std::stof(string)*255;
+                    inputFile >> string;
+                    bgColor.g = std::stof(string)*255;
+                    inputFile >> string;
+                    bgColor.b = std::stof(string)*255;
+                    materials.push_back(bgColor);
+                }
+                else if(string == "mtlcolor")
+                {
+                    ColorType mColor = ColorType(0,0,0);
+                    inputFile >> string;
+                    mColor.r = std::stof(string)*255;
+                    inputFile >> string;
+                    mColor.g = std::stof(string)*255;
+                    inputFile >> string;
+                    mColor.b = std::stof(string)*255;
+                    materials.push_back(mColor);
+                }
+                else if(string == "sphere")
+                {
+                    SphereType sphere = SphereType(vec3(0,0,0), 0, materials.size()-1);
+                    inputFile >> string;
+                    sphere.pos.x = std::stof(string);
+                    inputFile >> string;
+                    sphere.pos.y = std::stof(string);
+                    inputFile >> string;
+                    sphere.pos.z = std::stof(string);
+                    inputFile >> string;
+                    sphere.radius = std::stof(string);
+                    spheres.push_back(sphere);
+                }
+            }
+            catch(...)
+            {
+                std::cout << "Error in number of arguments or in variable/argument name, check input file" << std::endl;
+                return 0;
+            }
+        }
+
+        inputFile.close();
+    }
+
+    aspectRatio = (float)imgWidth/imgHeight;
+    hFOV = degreesToRadians(hFOV);
+    vFOV = 2*atan(tan(hFOV/2)/aspectRatio);
 
     w = vec3::normalized(vec3::scale(camDir, -1));
-    u = vec3::normalized(vec3::cross(w, camUp));
-    v = vec3::normalized(vec3::cross(camDir, u));
+    u = vec3::normalized(vec3::cross(camDir, camUp));
+    v = vec3::normalized(vec3::cross(u, camDir));
 
     windowWidth = 2*viewDist*tan(hFOV/2);
-    windowHeight = windowWidth / /*aspect ratio*/imgWidth/imgHeight;
+    windowHeight = windowWidth / aspectRatio;
 
-    std::cout << u.toString() << v.toString() << vec3::angle(u, v) * 180/3.14;
+    ul = vec3::add(vec3::add(camPos, vec3::scale(camDir, viewDist)), vec3::add(vec3::scale(u, -windowWidth/2), vec3::scale(v, windowHeight/2)));
+    ur = vec3::add(vec3::add(camPos, vec3::scale(camDir, viewDist)), vec3::add(vec3::scale(u, windowWidth/2), vec3::scale(v, windowHeight/2)));
+    ll = vec3::add(vec3::add(camPos, vec3::scale(camDir, viewDist)), vec3::add(vec3::scale(u, -windowWidth/2), vec3::scale(v, -windowHeight/2)));
+    lr = vec3::add(vec3::add(camPos, vec3::scale(camDir, viewDist)), vec3::add(vec3::scale(u, windowWidth/2), vec3::scale(v, -windowHeight/2)));
 
-    std::ofstream outfile ("img.ppm");
+    deltaH = vec3::scale(vec3::sub(ur, ul), 1.0/(imgWidth-1));
+    deltaV = vec3::scale(vec3::sub(ll, ul), 1.0/(imgHeight-1));
+
+    std::string outfileName = std::string(argv[2]) + ".ppm";
+    std::ofstream outfile (outfileName);
     outfile << "P3\n" << imgWidth << " " << imgHeight << "\n255\n";
 
-    for(int y = 0; y < imgHeight; y++)
+    for(int j = 0; j < imgHeight; j++)
     {
-        for(int x = 0; x < imgWidth; x++)
+        for(int i = 0; i < imgWidth; i++)
         {
-            int R, G, B;
-            outfile << R << " " << G << " " << B << "\n";
+
+            vec3 pixelWorldSpace = vec3::add(ul, vec3::add(vec3::scale(deltaH, i), vec3::scale(deltaV, j)));
+            RayType ray = RayType(camPos, vec3::normalized(vec3::sub(pixelWorldSpace, camPos)));
+
+            int colorIndex = TraceRay(ray, spheres, bgColor);
+            ColorType color = materials.at(colorIndex);
+            
+            outfile << color.r << " " << color.g << " " << color.b << "\n";
         }
     }
     outfile.close();
 
-    /* call Trace_Ray() with appropriate parameters */
-    /* use the value returned by Trace_Ray() to define
-    the pixel color */
-    /* write the final image to an output file */
-
     return 0;
 };
-
-
-
-// ColorType Trace_Ray( RayType ray )
-// /* “ray” specifies the incident ray (origin and
-// direction); for assignment 1a it is the ray
-// from the eye through a point in the view window */
-// /* please be forewarned that this parameter list will
-// evolve; later on we will need to pass in
-// more information */
-// { /* for each object in the scene, check for a
-// ray/object intersection; keep track of the
-// closest intersection point to the eye and the
-// identity of the object hit at that point */
-// /* if a valid intersection is found, call Shade_Ray()
-// to determine the pixel color; otherwise, return the
-// background color */
-// return;
-// }
-
-// ColorType Shade_Ray(/* parameter list*/ )
-// /* for assignment 1a, we only need to pass in an
-// identifier that allows access to the material
-// properties of the intersected object; in the future,
-// we will need to also provide the coordinates of the
-// point where the shading will be computed */
-// {
-// /* compute the color at the intersection point; presently
-// this consists of just returning the sphere’s material
-// color. Later, the illumination calculations will get
-// more complicated, and you will eventually make
-// recursive calls to TraceRay from within Shade_Ray when
-// your program is extended */
-// return bgColor;
-// }

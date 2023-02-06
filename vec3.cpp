@@ -51,7 +51,8 @@ vec3 vec3::cross(vec3 v1, vec3 v2)
 
 float vec3::angle(vec3 v1, vec3 v2)
 {
-    return std::acos(dot(normalized(v1), normalized(v2)));
+    return std::acos(dot(normalized(v1), normalized(v2)
+    ));
 }
 
 std::string vec3::toString()
