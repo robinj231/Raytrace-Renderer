@@ -1,66 +1,66 @@
 #include "vec3.h"
 #include <iostream>
 
-vec3::vec3()
+cVec3::cVec3()
 {
     x = y = z = 0;
 }
 
-vec3::vec3(float x, float y, float z)
+cVec3::cVec3(float x, float y, float z)
 {
     this->x = x;
     this->y = y;
     this->z = z;
 }
 
-vec3 vec3::normalized(vec3 v)
+cVec3 cVec3::normalized(cVec3 v)
 {
     return scale(v, 1.0/v.len());
 }
 
-vec3 vec3::scale(vec3 v, float scalar)
+cVec3 cVec3::scale(cVec3 v, float scalar)
 {
-    return vec3(v.x*scalar, v.y*scalar, v.z*scalar);
+    return cVec3(v.x*scalar, v.y*scalar, v.z*scalar);
 }
 
-float vec3::len()
+float cVec3::len()
 {
     return std::sqrt(dot(*this,*this));
 }
 
-vec3 vec3::add(vec3 v1, vec3 v2)
+cVec3 cVec3::add(cVec3 v1, cVec3 v2)
 {
-    return vec3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
+    return cVec3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
 }
 
 // Remember: Resultant vector will always point toward v1's end
-vec3 vec3::sub(vec3 v1, vec3 v2)
+cVec3 cVec3::sub(cVec3 v1, cVec3 v2)
 {
-    return vec3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
+    return cVec3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
 }
 
-float vec3::dot(vec3 v1, vec3 v2)
+float cVec3::dot(cVec3 v1, cVec3 v2)
 {
     return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;
 }
 
-vec3 vec3::cross(vec3 v1, vec3 v2)
+cVec3 cVec3::cross(cVec3 v1, cVec3 v2)
 {
-    return vec3(v1.y*v2.z - v1.z*v2.y, v1.z*v2.x - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x);
+    return cVec3(v1.y*v2.z - v1.z*v2.y, v1.z*v2.x - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x);
 }
 
-float vec3::angle(vec3 v1, vec3 v2)
+float cVec3::angle(cVec3 v1, cVec3 v2)
 {
     return std::acos(dot(normalized(v1), normalized(v2)
     ));
 }
 
-std::string vec3::toString()
+std::string cVec3::toString()
 {
     return std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + "\n";
 }
 
-vec3 vec3::rotate(vec3 v, vec3 axis, float angle)
+cVec3 cVec3::rotate(cVec3 v, cVec3 axis, float angle)
 {
     float qX = std::sin(angle/2.0)*axis.x;
     float qY = std::sin(angle/2.0)*axis.y;
@@ -77,5 +77,35 @@ vec3 vec3::rotate(vec3 v, vec3 axis, float angle)
     float v1z = v0w*-qZ + v0x*-qY - v0y*-qX + v0z*qW;
     //float v1w = v0w*qW - v0x*-qX - v0y*-qY - v0z*-qZ;
 
-    return vec3(v1x, v1y, v1z);
+    return cVec3(v1x, v1y, v1z);
+}
+
+float cVec3::r()
+{
+    return x;
+}
+
+float cVec3::g()
+{
+    return y;
+}
+
+float cVec3::b()
+{
+    return z;
+}
+
+void cVec3::setR(float r)
+{
+    x = r;
+}
+
+void cVec3::setG(float g)
+{
+    y = g;
+}
+
+void cVec3::setB(float b)
+{
+    z = b;
 }
