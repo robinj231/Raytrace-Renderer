@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
                     sphere.centerPos.z = std::stof(string);
                     inputFile >> string;
                     sphere.radius = std::stof(string);
-                    spheres.push_back(sphere);
+                    objects.push_back(&sphere);
                 }
             }
             catch(...)
@@ -144,6 +144,12 @@ int main(int argc, char *argv[])
 
         inputFile.close();
     }
+
+    // vertexArray.push_back(cVec3(0,0,3));
+    // vertexArray.push_back(cVec3(1.4,0,3));
+    // vertexArray.push_back(cVec3(0,1,3));
+    // cTriangle tri = cTriangle(0,1,2,materials.size()-1);
+    // objects.push_back(tri);
 
     aspectRatio = (float)imgWidth/imgHeight;
     hFOV = degreesToRadians(hFOV);

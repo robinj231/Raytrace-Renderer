@@ -1,10 +1,14 @@
 #pragma once
 #include "vec3.h"
+#include "ray.h"
 #include "sphere.h"
 #include "light.h"
 #include <iostream>
 #include <vector>
 #include <cmath>
+
+std::vector<cVec3> vertexArray;
+std::vector<cVec3> normalArray;
 
 float degreesToRadians(float degrees)
 {
@@ -46,19 +50,6 @@ public:
     }
 };
 
-class cRay
-{
-public:
-    cVec3 pos;
-    cVec3 dir;
-
-    cRay(cVec3 pos, cVec3 dir)
-    {
-        this->pos = pos;
-        this->dir = dir;
-    }
-};
-
 struct sHitData
 {
     cVec3 collisionPt;
@@ -67,7 +58,7 @@ struct sHitData
 };
 
 std::vector<cMaterial> materials;
-std::vector<cSphere> spheres;
+std::vector<cPrimitive*> objects;
 std::vector<cLight> lightEnv;
 
 cVec3 camPos = cVec3(0,0,0);
@@ -95,58 +86,90 @@ float aspectRatio;
 
 cVec3 bgColor = cVec3(0,0,0);
 
-float RaySphereCollision(cRay ray, cSphere sphere)
-{
-    cVec3 vA = ray.pos;
-    cVec3 vB = cVec3::add(ray.pos, ray.dir);
-    cVec3 vC = sphere.centerPos;
+// float RayCollision(cRay ray, cPrimitive* primitive)
+// {
+//     std::cout << "read as triangle\n" << typeid(*primitive).name() << std::endl;
+//     if(typeid(*primitive).name() == "cSphere")
+//     {
+//         cSphere* sphere = (cSphere*)primitive;
 
-    float a = pow((vB.x-vA.x),2) + pow((vB.y-vA.y),2) + pow((vB.z-vA.z),2);
-    float b = 2*((vB.x-vA.x)*(vA.x-vC.x) + (vB.y-vA.y)*(vA.y-vC.y) + (vB.z-vA.z)*(vA.z-vC.z));
-    float c = pow((vA.x-vC.x),2) + pow((vA.y-vC.y),2) + pow((vA.z-vC.z),2) - pow(sphere.radius, 2);
-    float delta = pow(b, 2) - 4*a*c;
-    
-    if(delta < 0)
-    {
-        return -1;
-    }
-    else if(delta > 0)
-    {
-        float d1 = (-b-sqrt(delta))/2*a;
-        float d2 = (-b+sqrt(delta))/2*a;
+//         cVec3 vA = ray.pos;
+//         cVec3 vB = cVec3::add(ray.pos, ray.dir);
+//         cVec3 vC = sphere->centerPos;
+
+//         float a = pow((vB.x-vA.x),2) + pow((vB.y-vA.y),2) + pow((vB.z-vA.z),2);
+//         float b = 2*((vB.x-vA.x)*(vA.x-vC.x) + (vB.y-vA.y)*(vA.y-vC.y) + (vB.z-vA.z)*(vA.z-vC.z));
+//         float c = pow((vA.x-vC.x),2) + pow((vA.y-vC.y),2) + pow((vA.z-vC.z),2) - pow(sphere->radius, 2);
+//         float delta = pow(b, 2) - 4*a*c;
         
-        float closest = -1;
-        if(d1 > 0 && d2 <= 0)
-        {
-            closest = d1;
-        }
-        else if(d1 <= 0 && d2 > 0)
-        {
-            closest = d2;
-        }
-        else if(d1 > 0 && d2 > 0)
-        {
-            closest = std::min(d1, d2);
-        }
+//         if(delta < 0)
+//         {
+//             return -1;
+//         }
+//         else if(delta > 0)
+//         {
+//             float d1 = (-b-sqrt(delta))/2*a;
+//             float d2 = (-b+sqrt(delta))/2*a;
+            
+//             float closest = -1;
+//             if(d1 > 0 && d2 <= 0)
+//             {
+//                 closest = d1;
+//             }
+//             else if(d1 <= 0 && d2 > 0)
+//             {
+//                 closest = d2;
+//             }
+//             else if(d1 > 0 && d2 > 0)
+//             {
+//                 closest = std::min(d1, d2);
+//             }
 
-        return closest;
-    }
-    else // delta == 0
-    {
-        return -b/2*a > 0;
-    }
-}
+//             return closest;
+//         }
+//         else // delta == 0
+//         {
+//             return -b/2*a > 0;
+//         }
+//     }
+//     else if(typeid(primitive).name() == "cTriangle")
+//     {
+//         cTriangle* tri = (cTriangle*)primitive;
+
+//         cVec3 ptZeroToOne = cVec3::sub(vertexArray.at(tri->point1Index), vertexArray.at(tri->point0Index));
+//         cVec3 ptZeroToTwo = cVec3::sub(vertexArray.at(tri->point2Index), vertexArray.at(tri->point0Index));
+//         cVec3 planeNormal = cVec3::cross(ptZeroToOne, ptZeroToTwo);
+
+//         // Plane Equation, A*x + B*y + C*z + D = 0
+//         float d = -(planeNormal.x * vertexArray.at(tri->point0Index).x + planeNormal.y * vertexArray.at(tri->point0Index).y + planeNormal.z * vertexArray.at(tri->point0Index).z);
+
+//         float denominator = planeNormal.x * ray.dir.x + planeNormal.y * ray.dir.y + planeNormal.z * ray.dir.z;
+
+//         if(denominator != 0)
+//         {
+//             return -(planeNormal.x * ray.pos.x + planeNormal.y * ray.pos.y + planeNormal.z * ray.pos.z + d)/denominator;
+//         }
+//         else
+//         {
+//             return -1;
+//         }
+//     }
+//     else
+//     {
+//         return -1;
+//     }
+// }
 
 sHitData* TraceRay(cRay ray, int self = -1)
 { 
     sHitData* hitData = NULL;
     float closestDist = INFINITY;
 
-    for(int s = 0; s < spheres.size(); s++)
+    for(int s = 0; s < objects.size(); s++)
     {
         if(s != self)
         {
-            float objDist = RaySphereCollision(ray, spheres.at(s));
+            float objDist = objects.at(s)->rayCollision(ray);
             if(objDist > 0 && objDist < closestDist)
             {
                 if(hitData == NULL)
@@ -169,9 +192,9 @@ sHitData* TraceRay(cRay ray, int self = -1)
 
 cVec3 PhongShade(sHitData* hitData)
 {
-    cMaterial material = materials.at(spheres.at(hitData->objIndex).materialIndex);
+    cMaterial material = materials.at(objects.at(hitData->objIndex)->materialIndex);
     cVec3 pos = hitData->collisionPt;
-    cVec3 normal = spheres.at(hitData->objIndex).getNormal(hitData->collisionPt);
+    cVec3 normal = objects.at(hitData->objIndex)->getNormal(hitData->collisionPt);
 
     cVec3 returnColor = cVec3::scale(material.color, material.ambientMult);
 
