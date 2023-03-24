@@ -1,9 +1,9 @@
-project(raytracer1b)
+project(raytracer1c)
 
 add_executable(
-    raytracer1b
+    raytracer1c
     source.cpp
     vec3.cpp
 	light.cpp
-	sphere.cpp
+	primitive.cpp
 )

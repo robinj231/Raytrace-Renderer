@@ -1,7 +1,7 @@
 #pragma once
 #include "vec3.h"
 #include "ray.h"
-#include "sphere.h"
+#include "primitive.h"
 #include "light.h"
 #include <iostream>
 #include <vector>
@@ -9,6 +9,7 @@
 
 std::vector<cVec3> vertexArray;
 std::vector<cVec3> normalArray;
+std::vector<std::pair<float,float>> texCoordArray;
 
 float degreesToRadians(float degrees)
 {
@@ -57,6 +58,7 @@ struct sHitData
     float distance;
 };
 
+std::vector<std::vector<std::vector<cVec3>>> textures;
 std::vector<cMaterial> materials;
 std::vector<cPrimitive*> objects;
 std::vector<cLight> lightEnv;
@@ -85,80 +87,6 @@ int imgHeight = 100;
 float aspectRatio;
 
 cVec3 bgColor = cVec3(0,0,0);
-
-// float RayCollision(cRay ray, cPrimitive* primitive)
-// {
-//     std::cout << "read as triangle\n" << typeid(*primitive).name() << std::endl;
-//     if(typeid(*primitive).name() == "cSphere")
-//     {
-//         cSphere* sphere = (cSphere*)primitive;
-
-//         cVec3 vA = ray.pos;
-//         cVec3 vB = cVec3::add(ray.pos, ray.dir);
-//         cVec3 vC = sphere->centerPos;
-
-//         float a = pow((vB.x-vA.x),2) + pow((vB.y-vA.y),2) + pow((vB.z-vA.z),2);
-//         float b = 2*((vB.x-vA.x)*(vA.x-vC.x) + (vB.y-vA.y)*(vA.y-vC.y) + (vB.z-vA.z)*(vA.z-vC.z));
-//         float c = pow((vA.x-vC.x),2) + pow((vA.y-vC.y),2) + pow((vA.z-vC.z),2) - pow(sphere->radius, 2);
-//         float delta = pow(b, 2) - 4*a*c;
-        
-//         if(delta < 0)
-//         {
-//             return -1;
-//         }
-//         else if(delta > 0)
-//         {
-//             float d1 = (-b-sqrt(delta))/2*a;
-//             float d2 = (-b+sqrt(delta))/2*a;
-            
-//             float closest = -1;
-//             if(d1 > 0 && d2 <= 0)
-//             {
-//                 closest = d1;
-//             }
-//             else if(d1 <= 0 && d2 > 0)
-//             {
-//                 closest = d2;
-//             }
-//             else if(d1 > 0 && d2 > 0)
-//             {
-//                 closest = std::min(d1, d2);
-//             }
-
-//             return closest;
-//         }
-//         else // delta == 0
-//         {
-//             return -b/2*a > 0;
-//         }
-//     }
-//     else if(typeid(primitive).name() == "cTriangle")
-//     {
-//         cTriangle* tri = (cTriangle*)primitive;
-
-//         cVec3 ptZeroToOne = cVec3::sub(vertexArray.at(tri->point1Index), vertexArray.at(tri->point0Index));
-//         cVec3 ptZeroToTwo = cVec3::sub(vertexArray.at(tri->point2Index), vertexArray.at(tri->point0Index));
-//         cVec3 planeNormal = cVec3::cross(ptZeroToOne, ptZeroToTwo);
-
-//         // Plane Equation, A*x + B*y + C*z + D = 0
-//         float d = -(planeNormal.x * vertexArray.at(tri->point0Index).x + planeNormal.y * vertexArray.at(tri->point0Index).y + planeNormal.z * vertexArray.at(tri->point0Index).z);
-
-//         float denominator = planeNormal.x * ray.dir.x + planeNormal.y * ray.dir.y + planeNormal.z * ray.dir.z;
-
-//         if(denominator != 0)
-//         {
-//             return -(planeNormal.x * ray.pos.x + planeNormal.y * ray.pos.y + planeNormal.z * ray.pos.z + d)/denominator;
-//         }
-//         else
-//         {
-//             return -1;
-//         }
-//     }
-//     else
-//     {
-//         return -1;
-//     }
-// }
 
 sHitData* TraceRay(cRay ray, int self = -1)
 { 
@@ -196,11 +124,21 @@ cVec3 PhongShade(sHitData* hitData)
     cVec3 pos = hitData->collisionPt;
     cVec3 normal = objects.at(hitData->objIndex)->getNormal(hitData->collisionPt);
 
-    cVec3 returnColor = cVec3::scale(material.color, material.ambientMult);
+    cVec3 diffuseColor;
+    
+    if(objects[hitData->objIndex]->textureIndex >= 0)
+    {
+        diffuseColor = objects[hitData->objIndex]->getTexCoords(hitData->collisionPt);
+    }
+    else
+    {
+        diffuseColor = material.color;
+    }
 
     cVec3 camVector = cVec3::normalized(cVec3::sub(camPos, pos));
     cVec3 lVector;
     cVec3 hVector;
+    cVec3 returnColor = cVec3::scale(diffuseColor, material.ambientMult);
 
     cVec3 diffuseComponent;
     cVec3 specComponent;
@@ -221,7 +159,10 @@ cVec3 PhongShade(sHitData* hitData)
         }
         hVector = cVec3::normalized(cVec3::add(lVector, camVector));
 
-        diffuseComponent = cVec3::scale(material.color, std::max((float)0, cVec3::dot(normal, lVector)*material.diffuseMult));
+        
+
+        diffuseComponent = cVec3::scale(diffuseColor, std::max((float)0, cVec3::dot(normal, lVector)*material.diffuseMult));
+
         specComponent = cVec3::scale(material.specColor, std::pow(std::max((float)0, cVec3::dot(normal, hVector)), material.specExponent)*material.specMult);
         cVec3 diffuseAndSpec = cVec3::add(diffuseComponent, specComponent);
         returnColor = cVec3::add(returnColor, cVec3::scale(cVec3(diffuseAndSpec.r()*lightEnv.at(l).color.r(), diffuseAndSpec.g()*lightEnv.at(l).color.g(), diffuseAndSpec.b()*lightEnv.at(l).color.b()), noShadowFlag));

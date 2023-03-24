@@ -5,9 +5,15 @@
 #include <math.h>
 #include <vector>
 #include "light.h"
+#include <array>
 
 
 #include "setup.h"
+
+cVec3 storeImage(int height, int width)
+{
+    return cVec3(0,0,0);
+}
 
 int main(int argc, char *argv[])
 {
@@ -45,6 +51,7 @@ int main(int argc, char *argv[])
                     camDir.y = std::stof(string);
                     inputFile >> string;
                     camDir.z = std::stof(string);
+                    camDir = cVec3::normalized(camDir);
                 }
                 else if(string == "updir")
                 {
@@ -54,6 +61,7 @@ int main(int argc, char *argv[])
                     camUp.y = std::stof(string);
                     inputFile >> string;
                     camUp.z = std::stof(string);
+                    camUp = cVec3::normalized(camUp);
                 }
                 else if(string == "hfov")
                 {
@@ -88,6 +96,10 @@ int main(int argc, char *argv[])
                     light.vec3.z = std::stof(string);
                     inputFile >> string;
                     light.pointLight = std::stoi(string);
+                    if(!light.pointLight)
+                    {
+                        light.vec3 = cVec3::normalized(light.vec3);
+                    }
                     inputFile >> string;
                     light.color.setR(std::stof(string));
                     inputFile >> string;
@@ -123,16 +135,185 @@ int main(int argc, char *argv[])
                 }
                 else if(string == "sphere")
                 {
-                    cSphere sphere = cSphere(cVec3(0,0,0), 0, materials.size()-1);
+                    cSphere* sphere = new cSphere(cVec3(0,0,0), 0, materials.size()-1);
                     inputFile >> string;
-                    sphere.centerPos.x = std::stof(string);
+                    sphere->centerPos.x = std::stof(string);
                     inputFile >> string;
-                    sphere.centerPos.y = std::stof(string);
+                    sphere->centerPos.y = std::stof(string);
                     inputFile >> string;
-                    sphere.centerPos.z = std::stof(string);
+                    sphere->centerPos.z = std::stof(string);
                     inputFile >> string;
-                    sphere.radius = std::stof(string);
-                    objects.push_back(&sphere);
+                    sphere->radius = std::stof(string);
+
+                    if(textures.size() > 0)
+                    {
+                        sphere->textureIndex = textures.size()-1;
+                    }
+                    objects.push_back(sphere);
+                }
+                // add vertex into vertex array
+                else if(string == "v")
+                {
+                    cVec3 newVertex = cVec3(0,0,0);
+                    inputFile >> string;
+                    newVertex.x = std::stof(string);
+                    inputFile >> string;
+                    newVertex.y = std::stof(string);
+                    inputFile >> string;
+                    newVertex.z = std::stof(string);
+                    vertexArray.push_back(newVertex);
+                }
+                // add normal into normal array
+                else if(string == "vn")
+                {
+                    cVec3 newNormal = cVec3(0,0,0);
+                    inputFile >> string;
+                    newNormal.x = std::stof(string);
+                    inputFile >> string;
+                    newNormal.y = std::stof(string);
+                    inputFile >> string;
+                    newNormal.z = std::stof(string);
+                    normalArray.push_back(cVec3::normalized(newNormal));
+                }
+                // add uv coordinates to texCoord array
+                else if(string == "vt")
+                {
+                    std::pair<float, float> newTexCoord;
+                    inputFile >> string;
+                    newTexCoord.first = std::stof(string);
+                    inputFile >> string;
+                    newTexCoord.second = std::stof(string);
+                    texCoordArray.push_back(newTexCoord);
+                }
+                // add triangle
+                else if(string == "f")
+                {
+                    cTriangle* triangle = new cTriangle(0,0,0, materials.size()-1);
+
+                    inputFile >> string;
+                    if(string.find("//") != std::string::npos)
+                    {
+                        triangle->smoothShading = true;
+
+                        triangle->point0Index = std::stoi(string.substr(0, string.find("//")))-1;
+
+                        triangle->normal0Index = std::stoi(string.substr(string.find("//")+2, string.length()))-1;
+                        
+                        inputFile >> string;
+
+                        triangle->point1Index = std::stoi(string.substr(0, string.find("//")))-1;
+
+                        triangle->normal1Index = std::stoi(string.substr(string.find("//")+2, string.length()))-1;
+
+                        inputFile >> string;
+
+                        triangle->point2Index = std::stoi(string.substr(0, string.find("//")))-1;
+
+                        triangle->normal2Index = std::stoi(string.substr(string.find("//")+2, string.length()))-1;
+                    }
+                    else if(string.find("/") != std::string::npos)
+                    {
+                        int foundIndex = string.find("/");
+                        if(string.find("/", foundIndex+1) != std::string::npos)
+                        {
+                            triangle->smoothShading = true;
+
+                            triangle->point0Index = std::stoi(string.substr(0, foundIndex))-1;
+
+                            triangle->texCoord0Index = std::stoi(string.substr(foundIndex+1, string.find("/", foundIndex+1)-foundIndex))-1;
+
+                            triangle->normal0Index = std::stoi(string.substr(string.find("/", foundIndex+1)+1))-1;
+                            
+                            inputFile >> string;
+                            foundIndex = string.find("/");
+
+                            triangle->point1Index = std::stoi(string.substr(0, foundIndex))-1;
+
+                            triangle->texCoord1Index = std::stoi(string.substr(foundIndex+1, string.find("/", foundIndex+1)-foundIndex))-1;
+
+                            triangle->normal1Index = std::stoi(string.substr(string.find("/", foundIndex+1)+1))-1;
+
+                            inputFile >> string;
+                            foundIndex = string.find("/");
+
+                            triangle->point2Index = std::stoi(string.substr(0, foundIndex))-1;
+
+                            triangle->texCoord2Index = std::stoi(string.substr(foundIndex+1, string.find("/", foundIndex+1)-foundIndex))-1;
+
+                            triangle->normal2Index = std::stoi(string.substr(string.find("/", foundIndex+1)+1))-1;
+                        }
+                        else
+                        {
+                            triangle->point0Index = std::stoi(string.substr(0, string.find("/")))-1;
+
+                            triangle->texCoord0Index = std::stoi(string.substr(string.find("/")+1, string.length()))-1;
+                            
+                            inputFile >> string;
+
+                            triangle->point1Index = std::stoi(string.substr(0, string.find("/")))-1;
+
+                            triangle->texCoord1Index = std::stoi(string.substr(string.find("/")+1, string.length()))-1;
+
+                            inputFile >> string;
+
+                            triangle->point2Index = std::stoi(string.substr(0, string.find("/")))-1;
+
+                            triangle->texCoord2Index = std::stoi(string.substr(string.find("/")+1, string.length()))-1;
+                        }
+                    }
+                    else
+                    {
+                        triangle->point0Index = std::stoi(string)-1;
+                        inputFile >> string;
+                        triangle->point1Index = std::stoi(string)-1;
+                        inputFile >> string;
+                        triangle->point2Index = std::stoi(string)-1;
+                    }
+
+                    if(textures.size() > 0)
+                    {
+                        triangle->textureIndex = textures.size()-1;
+                    }
+                    objects.push_back(triangle);
+                }
+                else if(string == "texture")
+                {
+                    inputFile >> string;
+                    std::ifstream textureFile (string);
+                    int height;
+                    int width;
+
+                    // P3 header
+                    textureFile >> string;
+
+                    textureFile >> width;
+                    textureFile >> height;
+
+                    // max color val
+                    textureFile >> string;
+
+                    std::vector<std::vector<cVec3>> texture;
+
+                    for(int j = 0; j < height; j++)
+                    {
+                        std::vector<cVec3> newRow;
+                        texture.push_back(newRow);
+
+                        for(int i = 0; i < width; i++)
+                        {
+                            cVec3 fragColor = cVec3(0,0,0);
+                            textureFile >> string;
+                            fragColor.setR(std::stof(string)/255);
+                            textureFile >> string;
+                            fragColor.setG(std::stof(string)/255);
+                            textureFile >> string;
+                            fragColor.setB(std::stof(string)/255);
+                            texture.at(j).push_back(fragColor);
+                        }
+                    }
+
+                    textures.push_back(texture);
+                    textureFile.close();
                 }
             }
             catch(...)
@@ -144,12 +325,6 @@ int main(int argc, char *argv[])
 
         inputFile.close();
     }
-
-    // vertexArray.push_back(cVec3(0,0,3));
-    // vertexArray.push_back(cVec3(1.4,0,3));
-    // vertexArray.push_back(cVec3(0,1,3));
-    // cTriangle tri = cTriangle(0,1,2,materials.size()-1);
-    // objects.push_back(tri);
 
     aspectRatio = (float)imgWidth/imgHeight;
     hFOV = degreesToRadians(hFOV);
