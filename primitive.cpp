@@ -146,6 +146,11 @@ float cTriangle::rayCollision(cRay ray)
     cVec3 ptZeroToTwo = cVec3::sub(vertexArray.at(point2Index), vertexArray.at(point0Index));
     cVec3 planeNormal = cVec3::cross(ptZeroToOne, ptZeroToTwo);
 
+    if(cVec3::dot(ray.dir, planeNormal) > 0)
+    {
+        return -1;
+    }
+
     // Plane Equation, A*x + B*y + C*z + D = 0
     float d = -(planeNormal.x * vertexArray.at(point0Index).x + planeNormal.y * vertexArray.at(point0Index).y + planeNormal.z * vertexArray.at(point0Index).z);
 
@@ -165,7 +170,7 @@ float cTriangle::rayCollision(cRay ray)
     // triangle bounds test
     cVec3 e1 = cVec3::sub(vertexArray[point1Index], vertexArray[point0Index]);
     cVec3 e2 = cVec3::sub(vertexArray[point2Index], vertexArray[point0Index]);
-    cVec3 ep = cVec3::sub(cVec3::scale(ray.dir, collisionDist), vertexArray[point0Index]);
+    cVec3 ep = cVec3::sub(cVec3::add(ray.pos, cVec3::scale(ray.dir, collisionDist)), vertexArray[point0Index]);
 
     float d11 = cVec3::dot(e1, e1);
     float d22 = cVec3::dot(e2, e2);
@@ -210,5 +215,33 @@ cVec3 cTriangle::getTexCoords(cVec3 point)
     float u = alpha*texCoordArray[texCoord0Index].first + beta*texCoordArray[texCoord1Index].first + gamma*texCoordArray[texCoord2Index].first;
     float v = alpha*texCoordArray[texCoord0Index].second + beta*texCoordArray[texCoord1Index].second + gamma*texCoordArray[texCoord2Index].second;
 
-    return textures[textureIndex][round(v*textures[textureIndex].size())][round(u*textures[textureIndex][0].size())];
+
+
+    int vIndex = round(v*(textures[textureIndex].size()-1));
+    vIndex %= textures[textureIndex].size()-1;
+
+    if(vIndex < 0)
+    {
+        vIndex = (textures[textureIndex].size()-1) + vIndex;
+    }
+    
+    // if(vIndex > textures[textureIndex].size()-1)
+    // {
+    //     vIndex = textures[textureIndex].size()-1;
+    // }
+
+    int uIndex = round(u*(textures[textureIndex][0].size()-1));
+    uIndex %= textures[textureIndex][0].size()-1;
+
+    if(uIndex < 0)
+    {
+        uIndex = (textures[textureIndex][0].size()-1) + uIndex;
+    }
+
+    // if(uIndex > textures[textureIndex][0].size()-1)
+    // {   
+    //     uIndex = textures[textureIndex][0].size()-1;
+    // }
+
+    return textures[textureIndex][vIndex][uIndex];
 }

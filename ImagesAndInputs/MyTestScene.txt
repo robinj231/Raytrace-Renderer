@@ -1,0 +1,26 @@
+eye 1 0 0
+viewdir 0 0 -1
+updir 0 1 0
+hfov 70
+imsize 512 256
+bkgcolor 0.1 0.1 0.1
+light -1 -1 0 0 1 1 1
+mtlcolor 0 1 0 1 1 1 0.2 0.6 0.2 20
+texture AIOrangutanBeckoning.ppm
+vt 0 0
+vt 0 1
+vt 1 1
+vt 1 0
+v -1 -1 -5
+v -1 -1 -4
+v 1 -1 -4
+v 1 -1 -5
+f 1/1 2/2 3/3
+f 1/1 3/3 4/4
+
+v -1 1 -4
+v -1 1 -5
+
+texture AIOrangutanBeckoning.ppm
+f 5/1 2/2 1/3
+f 5/1 1/3 6/4
