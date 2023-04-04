@@ -77,7 +77,23 @@ cVec3 cSphere::getTexCoords(cVec3 point)
     float v = phi/3.141592653;
 
 
-    return textures[textureIndex][round(v*textures[textureIndex].size())][round(u*textures[textureIndex][0].size())];
+    int vIndex = round(v*(textures[textureIndex].size()-1));
+    vIndex %= textures[textureIndex].size()-1;
+
+    if(vIndex < 0)
+    {
+        vIndex = (textures[textureIndex].size()-1) + vIndex;
+    }
+
+    int uIndex = round(u*(textures[textureIndex][0].size()-1));
+    uIndex %= textures[textureIndex][0].size()-1;
+
+    if(uIndex < 0)
+    {
+        uIndex = (textures[textureIndex][0].size()-1) + uIndex;
+    }
+
+    return textures[textureIndex][vIndex][uIndex];
 }
 
 cCylinder::cCylinder(cVec3 centerPos, cVec3 upVector, float radius, float halfHeight, int materialIndex)
@@ -224,11 +240,6 @@ cVec3 cTriangle::getTexCoords(cVec3 point)
     {
         vIndex = (textures[textureIndex].size()-1) + vIndex;
     }
-    
-    // if(vIndex > textures[textureIndex].size()-1)
-    // {
-    //     vIndex = textures[textureIndex].size()-1;
-    // }
 
     int uIndex = round(u*(textures[textureIndex][0].size()-1));
     uIndex %= textures[textureIndex][0].size()-1;
@@ -237,11 +248,6 @@ cVec3 cTriangle::getTexCoords(cVec3 point)
     {
         uIndex = (textures[textureIndex][0].size()-1) + uIndex;
     }
-
-    // if(uIndex > textures[textureIndex][0].size()-1)
-    // {   
-    //     uIndex = textures[textureIndex][0].size()-1;
-    // }
 
     return textures[textureIndex][vIndex][uIndex];
 }

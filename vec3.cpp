@@ -57,7 +57,7 @@ float cVec3::angle(cVec3 v1, cVec3 v2)
 
 std::string cVec3::toString()
 {
-    return std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + "\n";
+    return std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z);
 }
 
 cVec3 cVec3::rotate(cVec3 v, cVec3 axis, float angle)

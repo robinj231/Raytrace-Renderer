@@ -77,13 +77,15 @@ int main(int argc, char *argv[])
                 }
                 else if(string == "bkgcolor")
                 {
-                    bgColor = cVec3(0,0,0);
+                    bgColor = {cVec3(0,0,0), 0};
                     inputFile >> string;
-                    bgColor.setR(std::stof(string));
+                    bgColor.first.setR(std::stof(string));
                     inputFile >> string;
-                    bgColor.setG(std::stof(string));
+                    bgColor.first.setG(std::stof(string));
                     inputFile >> string;
-                    bgColor.setB(std::stof(string));
+                    bgColor.first.setB(std::stof(string));
+                    inputFile >> string;
+                    bgColor.second = std::stof(string);
                 }
                 else if(string == "light")
                 {
@@ -131,6 +133,11 @@ int main(int argc, char *argv[])
                     material.specMult = std::stof(string);
                     inputFile >> string;
                     material.specExponent = std::stof(string);
+                    inputFile >> string;
+                    material.opacity = std::stof(string);
+                    inputFile >> string;
+                    material.refractionIndex = std::stof(string);
+                    
                     materials.push_back(material);
                 }
                 else if(string == "sphere")
@@ -324,6 +331,9 @@ int main(int argc, char *argv[])
         }
 
         inputFile.close();
+        std::cout << "vertices: " << vertexArray.size() << std::endl
+        << "normals: " << normalArray.size() << std::endl
+        << "uvs: " << texCoordArray.size() << std::endl;
     }
 
     aspectRatio = (float)imgWidth/imgHeight;
@@ -357,7 +367,7 @@ int main(int argc, char *argv[])
             cVec3 pixelWorldSpace = cVec3::add(ul, cVec3::add(cVec3::scale(deltaH, i), cVec3::scale(deltaV, j)));
             cRay ray = cRay(camPos, cVec3::normalized(cVec3::sub(pixelWorldSpace, camPos)));
 
-            cVec3 color = GetFragmentColor(ray);
+            cVec3 color = ShadeFragment(ray);
             
             outfile << std::floor(color.r()*255) << " " << std::floor(color.g()*255) << " " << std::floor(color.b()*255) << "\n";
         }
